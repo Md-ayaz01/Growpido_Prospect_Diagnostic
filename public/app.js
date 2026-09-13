@@ -244,6 +244,12 @@ async function triggerResearch() {
         if (facDesc) {
           facDesc.textContent = result.message || 'The subject identity or corporate affiliation could not be verified from public records.';
         }
+        failCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      const targetLabel = document.getElementById('activeTargetLabel');
+      if (targetLabel) {
+        targetLabel.textContent = 'Unindexed Profile (Public Record Search Halted Safely)';
       }
 
       if (result.observability) {
