@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GROWPIDO // Prospect → Diagnostic Intelligence Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Advisory Bar -->
+  <header class="top-nav">
+    <div class="nav-brand">
+      <span class="brand-title">GROWPIDO</span>
+      <span class="brand-sub">REPUTATION & NARRATIVE ADVISORY // DUBAI</span>
+    </div>
+    <div class="nav-meta">
+      <span id="runModePill" class="mode-pill mode-live">LIVE RESEARCH</span>
+      <span class="meta-tag"><span class="pulse-dot"></span> SYSTEM LIVE</span>
+      <span class="meta-tag">TRACK B // PROSPECT → DIAGNOSTIC</span>
+      <a href="/api/download/walkthrough-doc" class="nav-btn-secondary" download>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Download Walkthrough (DOCX)
+      </a>
+      <a href="/api/n8n/workflow" class="nav-btn-secondary" download>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export n8n Workflow
+      </a>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- Prospect Intake Hero -->
+    <section class="intake-section">
+      <div class="intake-header">
+        <h1 class="headline-primary">PROSPECT → DIAGNOSTIC</h1>
+        <p class="subtitle-text">Evidence-backed public positioning research for founders, CEOs, and fund managers.</p>
+        <div class="standard-banner">
+          <span class="standard-label">CORE ADVISORY PRINCIPLE</span>
+          <span class="standard-text">EVIDENCE BEFORE ASSERTION. The system is designed to say <em>"I don't know"</em>, <em>"I could not verify this"</em>, and <em>"This claim is not safe to publish"</em> before making any public assertion.</span>
+        </div>
+      </div>
+
+      <div class="input-card">
+        <div class="input-header-row">
+          <label for="linkedinInput" class="input-label">Public LinkedIn URL</label>
+          <div class="preset-selector">
+            <span class="preset-label">Test Profiles:</span>
+            <button class="btn-preset active" id="presetHuda">Huda Kattan (Huda Beauty)</button>
+            <button class="btn-preset" id="presetMudassir">Mudassir Sheikha (Careem)</button>
+            <button class="btn-preset" id="presetAbbas">Abbas Sajwani (AHS)</button>
+          </div>
+        </div>
+
+        <div class="input-action-row">
+          <input 
+            type="url" 
+            id="linkedinInput" 
+            class="input-field" 
+            placeholder="https://www.linkedin.com/in/huda-kattan/" 
+            value="https://www.linkedin.com/in/huda-kattan/"
+          />
+          <button id="runResearchBtn" class="btn-primary">
+            <span id="btnText">RESEARCH PROSPECT</span>
+            <div id="btnSpinner" class="spinner hidden"></div>
+          </button>
+        </div>
+
+        <div class="input-hints">
+          <span>Target: <strong id="activeTargetLabel">Huda Kattan (Founder & CEO, Huda Beauty)</strong></span>
+          <span class="hint-pill">Public sources only</span>
+          <span class="hint-pill">Zero private scraping</span>
+          <span class="hint-pill" id="modeTag">Mode: LIVE RESEARCH</span>
+        </div>
+      </div>
+
+      <!-- Observability & Run Status Panel -->
+      <div id="observabilityPanel" class="observability-panel">
+        <div class="obs-header">
+          <span class="obs-title">SYSTEM OBSERVABILITY // RUN TELEMETRY</span>
+          <span class="obs-run-id" id="obsRunId">RUN-ID: INITIALIZING</span>
+        </div>
+        <div class="obs-grid">
+          <div class="obs-item"><span class="obs-k">INPUT URL</span><span class="obs-v" id="obsInputUrl">---</span></div>
+          <div class="obs-item"><span class="obs-k">IDENTITY RESOLUTION</span><span class="obs-v" id="obsIdentity">---</span></div>
+          <div class="obs-item"><span class="obs-k">SOURCES FOUND</span><span class="obs-v" id="obsSources">0</span></div>
+          <div class="obs-item"><span class="obs-k">CLAIMS EXTRACTED</span><span class="obs-v" id="obsClaimsTotal">0</span></div>
+          <div class="obs-item"><span class="obs-k">DOUBLE-VERIFIED</span><span class="obs-v text-emerald" id="obsClaimsVerified">0</span></div>
+          <div class="obs-item"><span class="obs-k">PARTIAL / PRIMARY</span><span class="obs-v text-amber" id="obsClaimsPartial">0</span></div>
+          <div class="obs-item"><span class="obs-k">CLAIMS REFUSED</span><span class="obs-v text-rose" id="obsClaimsRefused">0</span></div>
+          <div class="obs-item"><span class="obs-k">CONFLICTS</span><span class="obs-v" id="obsConflicts">0</span></div>
+          <div class="obs-item"><span class="obs-k">HOUSE RULES</span><span class="obs-v text-emerald" id="obsHouseRules">PASSED</span></div>
+          <div class="obs-item"><span class="obs-k">TOTAL RUNTIME</span><span class="obs-v" id="obsRuntime">---</span></div>
+        </div>
+      </div>
+
+      <!-- Live Pipeline Stepper -->
+      <div id="pipelineTracker" class="pipeline-tracker hidden">
+        <div class="tracker-header">
+          <h3>Verification Pipeline Progress</h3>
+          <span id="pipelineStatusBadge" class="badge badge-warning">INITIALIZING</span>
+        </div>
+        <div class="step-grid" id="stepGrid">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="view-tabs" id="viewTabs">
+      <button class="tab-btn active" data-tab="tabDiagnostic">One-Page Diagnostic</button>
+      <button class="tab-btn" data-tab="tabLedger">Evidence Ledger (<span id="ledgerCount">0</span>)</button>
+      <button class="tab-btn" data-tab="tabRefusal">Refusal Engine (<span id="refusalCount">0</span>)</button>
+      <button class="tab-btn" data-tab="tabReview">Human Review Gate <span id="gateBadge" class="badge-mini badge-amber">PENDING</span></button>
+      <button class="tab-btn" data-tab="tabTestbench">Failure Testbench (7 Tests)</button>
+      <button class="tab-btn" data-tab="tabWorkflow">n8n Workflow</button>
+    </nav>
+
+    <!-- TAB 1: ONE-PAGE DIAGNOSTIC -->
+    <section id="tabDiagnostic" class="tab-content active">
+      <div class="diagnostic-actions">
+        <div class="state-pill-group">
+          <span class="state-label">APPROVAL STATE:</span>
+          <span id="diagnosticApprovalPill" class="state-pill state-draft">DRAFT // PENDING HUMAN REVIEW</span>
+        </div>
+        <div class="action-buttons">
+          <button class="btn-secondary" onclick="window.print()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print / Save PDF
+          </button>
+          <button class="btn-accent" id="reviewGateShortcutBtn">Review & Approve</button>
+        </div>
+      </div>
+
+      <!-- The One-Page Document (Client-Ready advisory artifact) -->
+      <article class="diagnostic-document" id="printableDiagnostic">
+        <header class="doc-header">
+          <div class="doc-title-block">
+            <span class="doc-kicker">GROWPIDO EXECUTIVE MEMORANDUM</span>
+            <h2 class="doc-title">PUBLIC POSITIONING DIAGNOSTIC</h2>
+            <span class="doc-subtitle">COMMERCIAL CONFIDENTIAL // DEFENSIVE INTELLIGENCE</span>
+          </div>
+          <div class="doc-meta-table">
+            <div class="meta-row"><span class="m-key">SUBJECT:</span><span class="m-val" id="diagSubject">—</span></div>
+            <div class="meta-row"><span class="m-key">COMPANY:</span><span class="m-val" id="diagCompany">—</span></div>
+            <div class="meta-row"><span class="m-key">LOCATION:</span><span class="m-val" id="diagLocation">—</span></div>
+            <div class="meta-row"><span class="m-key">DATE:</span><span class="m-val" id="diagDate">—</span></div>
+          </div>
+        </header>
+
+        <div class="doc-body">
+          <!-- Section 1: Executive Summary -->
+          <section class="doc-section">
+            <h3 class="section-title">1. EXECUTIVE SUMMARY</h3>
+            <p class="section-lead" id="diagSummary">Run research pipeline to generate verified executive summary.</p>
+          </section>
+
+          <!-- Section 2: Current Public Positioning -->
+          <section class="doc-section">
+            <h3 class="section-title">2. CURRENT PUBLIC POSITIONING</h3>
+            <div class="positioning-grid" id="diagPositioningGrid">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+
+          <!-- Section 3: Three Biggest Gaps -->
+          <section class="doc-section">
+            <h3 class="section-title">3. THREE BIGGEST POSITIONING GAPS</h3>
+            <div class="gaps-container" id="diagGapsContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+
+          <!-- Section 4: Recommended Narrative Territories -->
+          <section class="doc-section">
+            <h3 class="section-title">4. RECOMMENDED NARRATIVE TERRITORIES</h3>
+            <div class="territories-grid" id="diagTerritoriesGrid">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+
+          <!-- Section 5: Evidence Quality Scorecard & Refusal Audit -->
+          <section class="doc-section">
+            <h3 class="section-title">5. EVIDENCE QUALITY AND AUDIT LEDGER</h3>
+            <div class="scorecard-row">
+              <div class="score-card">
+                <span class="score-num" id="statReviewed">0</span>
+                <span class="score-desc">Claims Reviewed</span>
+              </div>
+              <div class="score-card verified">
+                <span class="score-num" id="statVerified">0</span>
+                <span class="score-desc">Verified (Primary/Corroborated)</span>
+              </div>
+              <div class="score-card partially">
+                <span class="score-num" id="statPartially">0</span>
+                <span class="score-desc">Partially Verified</span>
+              </div>
+              <div class="score-card refused">
+                <span class="score-num" id="statRefused">0</span>
+                <span class="score-desc">Refused / Excluded</span>
+              </div>
+            </div>
+
+            <div class="refusal-callout" id="diagRefusalHighlight">
+              <div class="callout-header">
+                <span class="badge badge-danger">CRITICAL REFUSAL AUDIT</span>
+                <span class="callout-title" id="diagRefusalTitle">Unverified Claim Excluded from Diagnostic</span>
+              </div>
+              <p class="refusal-text" id="diagRefusalText">No unverified claim processed yet.</p>
+              <div class="refusal-reason" id="diagRefusalReason"></div>
+            </div>
+          </section>
+
+          <!-- Section 6: Key Sources -->
+          <section class="doc-section">
+            <h3 class="section-title">6. KEY PRIMARY AND SECONDARY SOURCES</h3>
+            <div class="sources-list" id="diagSourcesList">
+              <!-- Dynamically populated -->
+            </div>
+          </section>
+        </div>
+
+        <footer class="doc-footer">
+          <div class="footer-rule">House Rule: No em dashes, no hashtags, no AI filler vocabulary, and no number published without a source we can point to.</div>
+          <div class="footer-notice">AI-generated research compiled by Growpido Advisory Systems. Mandatory human verification required prior to external publication.</div>
+        </footer>
+      </article>
+    </section>
+
+    <!-- TAB 2: EVIDENCE LEDGER -->
+    <section id="tabLedger" class="tab-content">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">EVIDENCE LEDGER</h2>
+          <p class="panel-subtitle">Auditable record of all candidate claims, source tiers, double-verification status, and inclusion decisions.</p>
+        </div>
+        <div class="filter-controls">
+          <button class="filter-btn active" data-filter="all">All Claims</button>
+          <button class="filter-btn" data-filter="VERIFIED">Verified</button>
+          <button class="filter-btn" data-filter="PARTIALLY VERIFIED">Partially Verified</button>
+          <button class="filter-btn" data-filter="REFUSED">Refused</button>
+          <button class="filter-btn" data-filter="CONFLICT">Conflicts</button>
+        </div>
+      </div>
+
+      <div class="ledger-table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Material Claim</th>
+              <th>Primary Source (Tier 1)</th>
+              <th>Secondary Source (Tier 2)</th>
+              <th>Status</th>
+              <th>Decision</th>
+              <th>Audit Reason</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody">
+            <tr>
+              <td colspan="7" class="empty-cell">Initiate prospect research to populate evidence ledger.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 3: REFUSAL ENGINE -->
+    <section id="tabRefusal" class="tab-content">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">CRITICAL REFUSAL ENGINE</h2>
+          <p class="panel-subtitle">Demonstrating claims the system identified in public chatter but explicitly refused to include in the diagnostic.</p>
+        </div>
+      </div>
+
+      <div class="refusal-showcase" id="refusalShowcaseContainer">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 4: HUMAN REVIEW GATE -->
+    <section id="tabReview" class="tab-content">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">HUMAN APPROVAL GATE</h2>
+          <p class="panel-subtitle">The AI never marks external deliverables as ready automatically. A senior reputation advisor must verify and approve.</p>
+        </div>
+      </div>
+
+      <div class="review-gate-layout">
+        <div class="gate-card">
+          <div class="gate-status-row">
+            <span class="gate-label">CURRENT GATE STATUS:</span>
+            <span id="gateStatusText" class="state-pill state-draft">DRAFT // AWAITING HUMAN VERIFICATION</span>
+          </div>
+
+          <!-- House Rules Automated Status Checklist -->
+          <div class="gate-checklist">
+            <h4>Mandatory Advisory Verification & House Rules:</h4>
+            <label class="check-item">
+              <input type="checkbox" id="chkPrimary" checked disabled>
+              <span>Every material claim verified against Tier 1 primary source or flagged with caveat.</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="chkSecond" checked disabled>
+              <span>Independent corroboration confirmed without source domain syndication.</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="chkRefused" checked disabled>
+              <span>Unsupported wealth superlatives and unverified figures excluded by Refusal Engine.</span>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="chkRules" checked disabled>
+              <span id="chkRulesLabel">House Rules: Zero em dashes, zero hashtags, zero AI filler words (VALIDATED).</span>
+            </label>
+          </div>
+
+          <div class="gate-form">
+            <div class="form-group">
+              <label for="reviewerName">Reviewer Name</label>
+              <input type="text" id="reviewerName" class="form-input" value="Ayaz Pathan">
+            </div>
+            <div class="form-group">
+              <label for="reviewerRole">Advisory Role</label>
+              <input type="text" id="reviewerRole" class="form-input" value="Senior Reputation Advisor">
+            </div>
+            <div class="form-group">
+              <label for="reviewNotes">Approval / Revision Notes</label>
+              <textarea id="reviewNotes" class="form-textarea" rows="3" placeholder="Enter notes justifying client dispatch approval or requesting specific research revision..."></textarea>
+            </div>
+            <div class="gate-buttons">
+              <button id="btnApproveGate" class="btn-success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                APPROVE FOR CLIENT DISPATCH
+              </button>
+              <button id="btnReviseGate" class="btn-danger">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                RETURN FOR REVISION
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gate-audit-log">
+          <h4>Approval Audit Trail</h4>
+          <div id="gateAuditTrail" class="audit-list">
+            <div class="audit-entry">
+              <span class="audit-time">System Startup</span>
+              <span class="audit-actor">Growpido Core Engine</span>
+              <p class="audit-msg">Human verification gate initialized in enforced mode.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: FAILURE TESTBENCH (7 TESTS) -->
+    <section id="tabTestbench" class="tab-content">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">SYSTEM RESILIENCE & FAILURE TESTBENCH</h2>
+          <p class="panel-subtitle">Demonstrating rigorous handling of uncertainty, invalid URLs, ambiguous identity, rate limits, and conflicting sources across 7 deterministic tests.</p>
+        </div>
+      </div>
+
+      <div class="testbench-grid">
+        <div class="test-card">
+          <h4>Test 1: Invalid LinkedIn URL</h4>
+          <p>Rejects malformed syntax immediately without phantom queries.</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_1_INVALID_URL')">Execute Test 1</button>
+        </div>
+
+        <div class="test-card">
+          <h4>Test 2: Ambiguous Executive Identity</h4>
+          <p>Refuses to guess between multiple entities sharing similar names.</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_2_AMBIGUOUS_IDENTITY')">Execute Test 2</button>
+        </div>
+
+        <div class="test-card">
+          <h4>Test 3: Insufficient Public Records</h4>
+          <p>Refuses to hallucinate context when public sources are inadequate.</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_3_INSUFFICIENT_EVIDENCE')">Execute Test 3</button>
+        </div>
+
+        <div class="test-card">
+          <h4>Test 4: Conflicting Sources</h4>
+          <p>Flags CONFLICT and isolates disputed numbers ($150M vs $80M).</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_4_SOURCE_CONFLICT')">Execute Test 4</button>
+        </div>
+
+        <div class="test-card">
+          <h4>Test 5: Tier 4-Only Claim</h4>
+          <p>Enforces rule: Tier 4 sources must NEVER verify factual claims.</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_5_TIER4_ONLY')">Execute Test 5</button>
+        </div>
+
+        <div class="test-card">
+          <h4>Test 6: Unsupported Wealth/Valuation</h4>
+          <p>Demands audited Tier 1 filings for sensitive metrics; refuses unverified PR.</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_6_UNSUPPORTED_WEALTH')">Execute Test 6</button>
+        </div>
+
+        <div class="test-card">
+          <h4>Test 7: Working Normal Prospect</h4>
+          <p>Executes complete pipeline on verified UAE founders across diverse industries.</p>
+          <button class="btn-secondary" onclick="runFailureScenario('TEST_7_NORMAL_PROSPECT')">Execute Test 7</button>
+        </div>
+      </div>
+
+      <div class="testbench-output-wrap">
+        <h4>Testbench Execution Output:</h4>
+        <pre id="testbenchOutput" class="code-block">// Select a failure test scenario above to inspect safe handling response.</pre>
+      </div>
+    </section>
+
+    <!-- TAB 6: N8N WORKFLOW -->
+    <section id="tabWorkflow" class="tab-content">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">n8n AUTOMATION & ORCHESTRATION WORKFLOW</h2>
+          <p class="panel-subtitle">Exportable, fully modular 13-node pipeline implementing the end-to-end verification architecture.</p>
+        </div>
+        <a href="/api/n8n/workflow" class="btn-primary" download>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Workflow JSON
+        </a>
+      </div>
+
+      <div class="workflow-diagram">
+        <div class="node-flow">
+          <div class="flow-node webhook">Webhook Ingestion</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Validate LinkedIn URL</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Identity Resolution</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Public Source Collection</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Normalize & Deduplicate</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Extract Claims</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node tier1">Tier 1 Primary Check</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node tier2">Tier 2 Second Check</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node refusal">Decision & Refusal</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Gap Analysis</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Assemble Diagnostic</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node gate">Human Review Gate</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Respond Webhook</div>
+        </div>
+      </div>
+
+      <div class="workflow-json-preview">
+        <h4>Workflow Definition Preview (`growpido_prospect_diagnostic_workflow.json`):</h4>
+        <pre id="workflowJsonBlock" class="code-block">Loading workflow schema...</pre>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

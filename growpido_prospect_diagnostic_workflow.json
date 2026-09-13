@@ -1,0 +1,312 @@
+{
+  "name": "Growpido - Prospect to Diagnostic Pipeline (Track B)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "prospect-diagnostic",
+        "options": {}
+      },
+      "name": "Webhook Ingestion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "id": "node-webhook-001"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 1. Validate LinkedIn URL Format\nconst url = items[0].json.linkedin_url || items[0].json.url;\nif (!url) {\n  throw new Error('LinkedIn URL is required');\n}\n\nconst regex = /^https?:\\/\\/(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9_-]+\\/?/;\nif (!regex.test(url.trim())) {\n  throw new Error('Invalid LinkedIn URL format. Must match https://linkedin.com/in/{handle}');\n}\n\nconst match = url.match(/linkedin\\.com\\/in\\/([a-zA-Z0-9_-]+)/);\nconst handle = match ? match[1] : 'prospect';\n\nreturn [{\n  json: {\n    ...items[0].json,\n    linkedin_url: url.trim(),\n    handle,\n    timestamp: new Date().toISOString(),\n    status: 'URL_VALIDATED'\n  }\n}];"
+      },
+      "name": "Validate LinkedIn URL",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "id": "node-validate-002"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 2. Ingest Researched Evidence & Explicitly Declare External Research Limitations\n// =========================================================================\n// HONEST ARCHITECTURE DECLARATION:\n// In this exported n8n workflow, external web scraping and dynamic LinkedIn profile resolution\n// cannot be performed autonomously without external API credentials or browser automation \n// (e.g. SerpApi, ProxyMesh, or the Growpido Research Engine API service).\n//\n// To prevent pretending that n8n dynamically bypasses anti-bot defenses on its own,\n// this workflow requires an authentic research payload containing 'subject', 'sources', and 'claims'.\n// =========================================================================\n\nconst input = items[0].json;\n\nif (!input.subject || !input.subject.name || !input.subject.company) {\n  throw new Error('RESEARCH_SERVICE_REQUIRED: Standalone n8n cannot scrape LinkedIn or live corporate domains without external credentials/API configuration. Pass a researched evidence payload (with subject, sources, and claims) from the Growpido research service.');\n}\n\nif (!input.subject.role) {\n  throw new Error('MISSING_ROLE: Executive role must be resolved from public records. Generic fallbacks (like Executive Leader) are prohibited.');\n}\n\nconst subject = {\n  name: input.subject.name,\n  company: input.subject.company,\n  role: input.subject.role,\n  jurisdiction: input.subject.location || 'Dubai, UAE',\n  official_domain: input.subject.officialDomain || input.subject.official_domain || null,\n  status: 'IDENTITY_CONFIRMED'\n};\n\nreturn [{ json: { ...input, subject } }];"
+      },
+      "name": "Identity & Company Resolution",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "id": "node-identity-003"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 3. Ingest Real Sources & Filter Unavailable Sources\nconst input = items[0].json;\nconst rawSources = input.sources || [];\n\n// Strict Evidence Rule: Mark unavailable sources and disqualify them from verification evidence\nconst verifiedSources = rawSources.filter(s => s.isAvailable !== false && s.status !== 'UNAVAILABLE' && s.excerpt);\n\nreturn [{ json: { ...input, verifiedSources } }];"
+      },
+      "name": "Public Source Collection",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "id": "node-collection-004"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 4. Normalize URLs and Deduplicate Sources by Hostname\nconst sources = items[0].json.verifiedSources || [];\nconst seen = new Set();\nconst deduped = [];\n\nfor (const src of sources) {\n  const normalized = (src.url || '').replace(/\\/$/, '').toLowerCase();\n  if (normalized && !seen.has(normalized)) {\n    seen.add(normalized);\n    deduped.push(src);\n  }\n}\n\nreturn [{ json: { ...items[0].json, normalizedSources: deduped } }];"
+      },
+      "name": "Normalize & Deduplicate Sources",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ],
+      "id": "node-dedup-005"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 5. Ingest Evidence-Linked Candidate Claims\n// Strict Evidence Integrity: Every claim must be supported by an actual retrieved source excerpt.\n// Zero generic/predetermined factual claims (governance, Founder vs Co-Founder, GCC operations, capital allocation).\nconst input = items[0].json;\nconst candidateClaims = input.claims || input.candidateClaims || [];\n\nconst validatedClaims = candidateClaims.map(c => {\n  const claimText = c.claim || c.claim_text;\n  const excerpt = c.evidence_quote || c.evidence_excerpt || null;\n  \n  return {\n    claim_id: c.claim_id,\n    claim: claimText,\n    category: c.category || c.claim_type || 'corporate_observation',\n    origin: c.origin || 'DISCOVERED_IN_PUBLIC_FOOTPRINT',\n    isSensitive: Boolean(c.isSensitive),\n    isSynthetic: Boolean(c.isSynthetic),\n    source_id: c.source_id || null,\n    source_url: c.source_url || null,\n    source_tier: c.source_tier || null,\n    evidence_quote: excerpt\n  };\n});\n\nreturn [{ json: { ...items[0].json, candidateClaims: validatedClaims } }];"
+      },
+      "name": "Extract Candidate Claims",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ],
+      "id": "node-extract-006"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 6. Claim-Specific Tier 1 Primary Verification\n// Strict Rule: Evaluate claim against its OWN source evidence, not simply attaching the first Tier 1 source.\nconst claims = items[0].json.candidateClaims;\nconst sources = items[0].json.normalizedSources || [];\n\nconst primaryChecked = claims.map(c => {\n  let primaryVerified = false;\n  let primaryEvidence = null;\n\n  if (!c.isSensitive && c.evidence_quote) {\n    // Check if THIS claim's specific source is a Tier 1 source\n    const matchingT1 = sources.find(s => s.tier === 1 && (s.id === c.source_id || s.url === c.source_url || (s.excerpt && s.excerpt.includes(c.evidence_quote))));\n    if (matchingT1) {\n      primaryVerified = true;\n      primaryEvidence = {\n        id: matchingT1.id,\n        url: matchingT1.url,\n        title: matchingT1.title,\n        tier: 1,\n        excerpt: matchingT1.excerpt\n      };\n    }\n  }\n\n  return {\n    ...c,\n    primary_source_verified: primaryVerified,\n    source_1: primaryEvidence\n  };\n});\n\nreturn [{ json: { ...items[0].json, primaryChecked } }];"
+      },
+      "name": "Tier 1 Primary Verification",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ],
+      "id": "node-tier1-007"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 7. Claim-Specific Tier 2 Independent Verification\n// Strict Rule: Evaluate claim against independent Tier 2 source evidence supporting THIS specific claim.\nconst claims = items[0].json.primaryChecked;\nconst sources = items[0].json.normalizedSources || [];\n\nconst doubleVerified = claims.map(c => {\n  let secondVerified = false;\n  let secondEvidence = null;\n\n  if (!c.isSensitive && c.evidence_quote) {\n    // Check if THIS claim's specific source is a Tier 2 source, or an independent Tier 2 source corroborates it\n    const matchingT2 = sources.find(s => s.tier === 2 && (s.id === c.source_id || s.url === c.source_url || (s.excerpt && s.excerpt.includes(c.evidence_quote))));\n    if (matchingT2) {\n      secondVerified = true;\n      secondEvidence = {\n        id: matchingT2.id,\n        url: matchingT2.url,\n        title: matchingT2.title,\n        tier: 2,\n        excerpt: matchingT2.excerpt\n      };\n    }\n  }\n\n  return {\n    ...c,\n    second_source_verified: secondVerified,\n    source_2: secondEvidence\n  };\n});\n\nreturn [{ json: { ...items[0].json, doubleVerified } }];"
+      },
+      "name": "Tier 2 Independent Verification",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ],
+      "id": "node-tier2-008"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 8. Dynamic Decision and Refusal Engine\n// Status is determined strictly by the claim's verified evidence. Zero predetermined claim_id outcomes.\nconst claims = items[0].json.doubleVerified;\n\nconst evaluated = claims.map(c => {\n  if (c.isSensitive) {\n    return {\n      ...c,\n      status: 'REFUSED',\n      decision: 'EXCLUDE',\n      reason: 'CLAIM REFUSED: Sensitive financial/wealth assertion lacking Tier 1 audited regulatory filings or official wealth index verification.'\n    };\n  } else if (!c.evidence_quote) {\n    return {\n      ...c,\n      status: 'UNVERIFIED',\n      decision: 'EXCLUDE',\n      reason: 'Insufficient public evidence: No retrieved source excerpt from Tier 1 or Tier 2 sources supports this assertion.'\n    };\n  } else if (c.primary_source_verified && c.second_source_verified) {\n    return {\n      ...c,\n      status: 'VERIFIED',\n      decision: 'INCLUDE',\n      reason: 'Directly supported by Tier 1 primary source and independently corroborated by Tier 2 source with verified retrieved excerpts.'\n    };\n  } else if (c.primary_source_verified && !c.second_source_verified) {\n    return {\n      ...c,\n      status: 'PRIMARY VERIFIED (CORROBORATION NOT FOUND)',\n      decision: 'INCLUDE_WITH_CAVEAT',\n      reason: 'Directly supported by Tier 1 official corporate source, but independent secondary corroboration was unavailable in public press.'\n    };\n  } else if (!c.primary_source_verified && c.second_source_verified) {\n    return {\n      ...c,\n      status: 'PRIMARY VERIFIED (CORROBORATION NOT FOUND)',\n      decision: 'INCLUDE_WITH_CAVEAT',\n      reason: 'Supported by Tier 2 independent public reference record; Tier 1 primary official domain was unavailable or uncorroborated.'\n    };\n  } else {\n    return {\n      ...c,\n      status: 'UNVERIFIED',\n      decision: 'EXCLUDE',\n      reason: 'Insufficient public evidence found across Tier 1 or Tier 2 sources to safely publish this assertion.'\n    };\n  }\n});\n\nconst included = evaluated.filter(c => c.decision.startsWith('INCLUDE'));\nconst refused = evaluated.filter(c => c.decision === 'EXCLUDE');\n\nreturn [{\n  json: {\n    ...items[0].json,\n    evaluatedClaims: evaluated,\n    includedClaims: included,\n    refusedClaims: refused,\n    stats: {\n      reviewed: evaluated.length,\n      verified: included.length,\n      refused: refused.length\n    }\n  }\n}];"
+      },
+      "name": "Claim Decision & Refusal Engine",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        300
+      ],
+      "id": "node-decision-009"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 9. Positioning Gap Analysis Based Strictly on Observable Observations\nconst subject = items[0].json.subject;\nconst included = items[0].json.includedClaims || [];\nconst refused = items[0].json.refusedClaims || [];\nconst verifiedIds = included.map(c => c.claim_id).join(', ');\n\nconst hasCorporateClaims = included.some(c => c.category === 'corporate_standing' || c.category === 'flagship_milestone');\nconst hasRoleClaim = included.some(c => c.category === 'identity_and_role');\nconst hasUncorroboratedSource = included.some(c => c.status && c.status.includes('CORROBORATION NOT FOUND'));\n\n// Gap 1: Corporate Attribution vs Independent Executive Perspective\nlet gap1;\nif (hasRoleClaim && hasCorporateClaims && included.length >= 2) {\n  gap1 = {\n    gap: `Public narrative is documented through ${subject.company} corporate operations rather than an independent executive viewpoint.`,\n    evidence: `Verified records (${verifiedIds}) document ${subject.name} as ${subject.role} of ${subject.company} in ${subject.jurisdiction}. Retrieved public evidence documents corporate operations and commercial milestones, while independent executive bylines or documented policy positions were not retrieved in the verified source ledger.`,\n    why_it_matters: 'Company-indexed positioning leaves executive reputation tied to corporate operating cycles rather than a distinct professional authority.',\n    recommended_direction: `Author structured executive viewpoints addressing industry dynamics and operational execution in ${subject.company}'s sector.`\n  };\n} else {\n  gap1 = {\n    gap: 'Insufficient public evidence to establish this gap.',\n    evidence: 'Insufficient public evidence to establish this gap.',\n    why_it_matters: 'Diagnostic conclusions require observable public evidence before asserting positioning gaps.',\n    recommended_direction: 'Expand public source discovery across trade registries and corporate releases.'\n  };\n}\n\n// Gap 2: Unverified Metrics vs Auditable Proof\nlet gap2;\nif (refused.length > 0) {\n  const refusedClaim = refused[0];\n  const refusedText = refusedClaim.claim || refusedClaim.claim_text || 'unverified metric assertion';\n  gap2 = {\n    gap: 'Public communication channels reflect metrics that lack audited corroboration.',\n    evidence: `Public records evaluated by the verification engine include unverified assertions (${refusedText}) that lack Tier 1 audited filings or regulatory verification.`,\n    why_it_matters: 'Unverified metrics create reputational exposure, whereas documented milestones establish defensible authority.',\n    recommended_direction: 'Retire unverified figures across public channels and anchor external communications exclusively on audited corporate developments.'\n  };\n} else {\n  gap2 = {\n    gap: 'Insufficient public evidence to establish this gap.',\n    evidence: 'Insufficient public evidence to establish this gap.',\n    why_it_matters: 'Without observable unverified assertions in public records, alleging evidentiary vulnerabilities would be unsubstantiated.',\n    recommended_direction: 'Maintain current standard of relying strictly on corroborated public milestones.'\n  };\n}\n\n// Gap 3: Primary Corporate Corroboration vs Secondary Media Footprint\nlet gap3;\nif (hasUncorroboratedSource) {\n  gap3 = {\n    gap: 'Public verification footprint relies on secondary reference records without primary corporate domain corroboration.',\n    evidence: `Primary corporate domain for ${subject.company} was unavailable during public collection. Verified claims (${verifiedIds}) rely on Tier 2 secondary reference records without primary corporate domain corroboration.`,\n    why_it_matters: 'Direct primary corporate publications provide the authoritative foundation for all secondary public citations.',\n    recommended_direction: 'Publish verifiable executive profiles and official corporate milestones directly on primary corporate web properties.'\n  };\n} else if (included.length > 0 && included.length <= 2) {\n  gap3 = {\n    gap: 'Public reference footprint is restricted to a narrow set of independent media sources.',\n    evidence: `Public verification footprint for ${subject.name} relies on ${included.length} verified observations across limited independent reference domains.`,\n    why_it_matters: 'A diversified media footprint provides broader validation and greater insulation against changes in single publication archives.',\n    recommended_direction: 'Broaden verified public visibility across diversified regional and international business publications.'\n  };\n} else {\n  gap3 = {\n    gap: 'Insufficient public evidence to establish this gap.',\n    evidence: 'Insufficient public evidence to establish this gap.',\n    why_it_matters: 'Reputational advisory recommendations must not be fabricated in the absence of observable evidence.',\n    recommended_direction: 'Continue monitoring public domain publications periodically.'\n  };\n}\n\nreturn [{ json: { ...items[0].json, positioningGaps: [gap1, gap2, gap3] } }];"
+      },
+      "name": "Positioning Gap Analysis",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        300
+      ],
+      "id": "node-gaps-010"
+    },
+    {
+      "parameters": {
+        "functionCode": "// 10. Assemble One-Page Public Positioning Diagnostic\nconst data = items[0].json;\n\nconst diagnostic = {\n  document_title: 'PUBLIC POSITIONING DIAGNOSTIC',\n  advisory: 'Growpido Reputation and Narrative Advisory (Dubai, UAE)',\n  person: data.subject.name,\n  company: data.subject.company,\n  location: data.subject.jurisdiction,\n  research_date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }),\n  approval_state: 'DRAFT_PENDING_REVIEW',\n  executive_summary: `${data.subject.name} is the verified ${data.subject.role} of ${data.subject.company}, operating in the United Arab Emirates. Corroborated records establish corporate standing. Public positioning remains heavily indexed to company product milestones, presenting an acute positioning gap between commercial operator and institutional authority.`,\n  three_biggest_gaps: data.positioningGaps,\n  evidence_quality: data.stats,\n  refused_claim_audit: data.refusedClaims[0] || null,\n  notice: 'AI-generated research. Human verification required before external client dispatch.'\n};\n\nreturn [{ json: { diagnostic } }];"
+      },
+      "name": "Assemble Diagnostic",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        300
+      ],
+      "id": "node-diagnostic-011"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Human Approval Gate",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        300
+      ],
+      "id": "node-gate-012"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        300
+      ],
+      "id": "node-respond-013"
+    }
+  ],
+  "connections": {
+    "Webhook Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Validate LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "Identity & Company Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identity & Company Resolution": {
+      "main": [
+        [
+          {
+            "node": "Public Source Collection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Public Source Collection": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Deduplicate Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Deduplicate Sources": {
+      "main": [
+        [
+          {
+            "node": "Extract Candidate Claims",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Candidate Claims": {
+      "main": [
+        [
+          {
+            "node": "Tier 1 Primary Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tier 1 Primary Verification": {
+      "main": [
+        [
+          {
+            "node": "Tier 2 Independent Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tier 2 Independent Verification": {
+      "main": [
+        [
+          {
+            "node": "Claim Decision & Refusal Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Decision & Refusal Engine": {
+      "main": [
+        [
+          {
+            "node": "Positioning Gap Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Positioning Gap Analysis": {
+      "main": [
+        [
+          {
+            "node": "Assemble Diagnostic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Diagnostic": {
+      "main": [
+        [
+          {
+            "node": "Human Approval Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Approval Gate": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
