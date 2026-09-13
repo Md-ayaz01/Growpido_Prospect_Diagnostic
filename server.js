@@ -79,7 +79,8 @@ app.use((req, res, next) => {
 app.post('/api/research', async (req, res) => {
   const startTime = Date.now();
   const runId = `RUN-${Date.now()}`;
-  const { linkedin_url, simulateError, simulateConflict } = req.body;
+  const { linkedin_url, url, simulateError, simulateConflict } = req.body;
+  const targetUrl = linkedin_url || url;
   const progressLogs = [];
 
   const addLog = (stage, detail) => {
@@ -98,7 +99,7 @@ app.post('/api/research', async (req, res) => {
     const runMode = isFixtureDemo ? 'DEMO FIXTURE' : 'LIVE RESEARCH';
 
     // 1. Validate LinkedIn URL
-    const urlValidation = validateLinkedInUrl(linkedin_url);
+    const urlValidation = validateLinkedInUrl(targetUrl);
     if (!urlValidation.valid) {
       addLog('URL_ERROR', urlValidation.error);
       return res.status(400).json({
@@ -109,7 +110,7 @@ app.post('/api/research', async (req, res) => {
         observability: {
           run_id: runId,
           start_time: new Date(startTime).toISOString(),
-          input_url: linkedin_url || 'None',
+          input_url: targetUrl || 'None',
           diagnostic_status: 'URL_VALIDATION_FAILED',
           total_runtime_ms: Date.now() - startTime
         }
@@ -120,7 +121,7 @@ app.post('/api/research', async (req, res) => {
 
     // 2. Resolve Identity & Subject Dynamically
     addLog('IDENTITY_RESOLUTION', 'Querying public knowledge endpoints to resolve UAE executive and company...');
-    const resolvedSubject = await resolveSubjectIdentity(linkedin_url, { simulateError });
+    const resolvedSubject = await resolveSubjectIdentity(targetUrl, { simulateError });
     addLog('IDENTITY_CONFIRMED', `Resolved: ${resolvedSubject.name} (${resolvedSubject.role}, ${resolvedSubject.company})`);
 
     // 3. Collect Public Sources
