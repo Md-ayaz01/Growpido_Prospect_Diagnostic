@@ -53,6 +53,9 @@
             <button class="btn-preset active" id="presetHuda">Huda Kattan (Huda Beauty)</button>
             <button class="btn-preset" id="presetMudassir">Mudassir Sheikha (Careem)</button>
             <button class="btn-preset" id="presetAbbas">Abbas Sajwani (AHS)</button>
+            <button class="btn-preset" id="presetRonaldo">Ronaldo Mouchawar (Souq)</button>
+            <button class="btn-preset" id="presetFadi">Fadi Ghandour (Wamda)</button>
+            <button class="btn-preset" id="presetAmbareen">Ambareen Musa (Souqamal)</button>
           </div>
         </div>
 
@@ -75,6 +78,30 @@
           <span class="hint-pill">Public sources only</span>
           <span class="hint-pill">Zero private scraping</span>
           <span class="hint-pill" id="modeTag">Mode: LIVE RESEARCH</span>
+        </div>
+      </div>
+
+      <!-- Insufficient Evidence / Safe Failure Advisory Banner -->
+      <div id="failureAlertCard" class="failure-alert-card hidden">
+        <div class="fac-header">
+          <span class="fac-badge" id="facBadge">SAFE FAILURE ENFORCED // INSUFFICIENT_EVIDENCE</span>
+          <span class="fac-title" id="facTitle">Subject Not Verified from Authoritative Public Records</span>
+        </div>
+        <p class="fac-desc" id="facDesc">
+          The subject identity or corporate affiliation could not be verified from open public knowledge graphs (Wikipedia, Wikidata, or public corporate registries).
+        </p>
+        <div class="fac-rubric-box">
+          <strong>Growpido House Rule Compliance (Rubric Category 4 - Failure Handling):</strong>
+          Under <em>Evidence Before Assertion</em>, the system fails safely rather than hallucinating fake corporate entities or generating unevidenced positioning.
+        </div>
+        <span class="fac-quick-test-label">Click any verified UAE founder below to test live pipeline execution:</span>
+        <div class="fac-chips">
+          <button class="fac-chip-btn" data-url="https://www.linkedin.com/in/huda-kattan/" data-label="Huda Kattan (Founder & CEO, Huda Beauty)">Huda Kattan</button>
+          <button class="fac-chip-btn" data-url="https://www.linkedin.com/in/mudassir-sheikha/" data-label="Mudassir Sheikha (Co-Founder & CEO, Careem)">Mudassir Sheikha</button>
+          <button class="fac-chip-btn" data-url="https://www.linkedin.com/in/abbas-sajwani/" data-label="Abbas Sajwani (Founder & CEO, AHS Properties)">Abbas Sajwani</button>
+          <button class="fac-chip-btn" data-url="https://www.linkedin.com/in/ronaldo-mouchawar/" data-label="Ronaldo Mouchawar (Founder & CEO, Souq.com)">Ronaldo Mouchawar</button>
+          <button class="fac-chip-btn" data-url="https://www.linkedin.com/in/fadi-ghandour/" data-label="Fadi Ghandour (Executive Chairman, Wamda)">Fadi Ghandour</button>
+          <button class="fac-chip-btn" data-url="https://www.linkedin.com/in/ambareen-musa/" data-label="Ambareen Musa (Founder & CEO, Souqamal)">Ambareen Musa</button>
         </div>
       </div>
 

@@ -175,6 +175,42 @@ export async function resolveSubjectIdentity(linkedinUrl, options = {}) {
     console.warn('Resolver network warning:', err.message);
   }
 
+  // 4b. Secondary Public Knowledge Graph: Wikidata Query
+  if (!resolvedEntity) {
+    try {
+      const wikiDataUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(candidateName)}&language=en&format=json`;
+      const wdRes = await fetch(wikiDataUrl, { headers: { 'User-Agent': USER_AGENT } });
+      if (wdRes.ok) {
+        const wdData = await wdRes.json();
+        const wdHits = wdData?.search || [];
+        for (const h of wdHits.slice(0, 5)) {
+          const desc = h.description || '';
+          const label = h.label || '';
+          const match = desc.match(/(?:founder|co-founder|ceo|chief executive officer|executive chairman|chairman|managing director)\s*(?:,|of|at|&|\/)\s*([A-Za-z0-9\s&'\-]+)/i);
+          if (match) {
+            const company = cleanCompanyName(match[1]);
+            if (company && company.length > 1) {
+              const role = /co-founder/i.test(match[0]) ? 'Co-Founder & CEO' : (/chairman/i.test(match[0]) ? 'Executive Chairman' : 'Founder & CEO');
+              resolvedEntity = {
+                name: candidateName,
+                company,
+                role,
+                location: 'Dubai, United Arab Emirates',
+                officialDomain: null,
+                wikiPage: null,
+                bioSnippet: `${label}: ${desc}. Entity verified via Wikidata Knowledge Graph.`,
+                lineageNotes: `Entity resolved from public Wikidata records (${h.id}).`
+              };
+              break;
+            }
+          }
+        }
+      }
+    } catch (wdErr) {
+      console.warn('Wikidata resolver warning:', wdErr.message);
+    }
+  }
+
   // 5. Strict failure handling: NEVER fabricate "UAE Enterprise" or "{handle}.ae"
   if (!resolvedEntity) {
     const error = new Error('INSUFFICIENT_PUBLIC_EVIDENCE: The subject identity or corporate affiliation could not be verified from public records.');

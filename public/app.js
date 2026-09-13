@@ -48,14 +48,19 @@ function initPresets() {
   const btnHuda = document.getElementById('presetHuda');
   const btnMudassir = document.getElementById('presetMudassir');
   const btnAbbas = document.getElementById('presetAbbas');
+  const btnRonaldo = document.getElementById('presetRonaldo');
+  const btnFadi = document.getElementById('presetFadi');
+  const btnAmbareen = document.getElementById('presetAmbareen');
   const input = document.getElementById('linkedinInput');
   const targetLabel = document.getElementById('activeTargetLabel');
 
+  const allPresetButtons = [btnHuda, btnMudassir, btnAbbas, btnRonaldo, btnFadi, btnAmbareen];
+
   const setPreset = (btn, url, label) => {
-    [btnHuda, btnMudassir, btnAbbas].forEach(b => b?.classList.remove('active'));
+    allPresetButtons.forEach(b => b?.classList.remove('active'));
     btn?.classList.add('active');
     input.value = url;
-    targetLabel.textContent = label;
+    if (targetLabel) targetLabel.textContent = label;
     triggerResearch();
   };
 
@@ -76,6 +81,37 @@ function initPresets() {
       setPreset(btnAbbas, 'https://www.linkedin.com/in/abbas-sajwani/', 'Abbas Sajwani (Founder & CEO, AHS Properties)');
     });
   }
+
+  if (btnRonaldo) {
+    btnRonaldo.addEventListener('click', () => {
+      setPreset(btnRonaldo, 'https://www.linkedin.com/in/ronaldo-mouchawar/', 'Ronaldo Mouchawar (Founder & CEO, Souq.com)');
+    });
+  }
+
+  if (btnFadi) {
+    btnFadi.addEventListener('click', () => {
+      setPreset(btnFadi, 'https://www.linkedin.com/in/fadi-ghandour/', 'Fadi Ghandour (Executive Chairman, Wamda)');
+    });
+  }
+
+  if (btnAmbareen) {
+    btnAmbareen.addEventListener('click', () => {
+      setPreset(btnAmbareen, 'https://www.linkedin.com/in/ambareen-musa/', 'Ambareen Musa (Founder & CEO, Souqamal)');
+    });
+  }
+
+  // Quick chip buttons in failure advisory card
+  document.querySelectorAll('.fac-chip-btn').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const url = chip.getAttribute('data-url');
+      const label = chip.getAttribute('data-label');
+      if (url) {
+        input.value = url;
+        if (targetLabel) targetLabel.textContent = label;
+        triggerResearch();
+      }
+    });
+  });
 }
 
 // Event Listeners
@@ -126,6 +162,9 @@ async function triggerResearch() {
   tracker.classList.remove('hidden');
   statusBadge.textContent = 'EXECUTING VERIFICATION';
   statusBadge.className = 'badge badge-warning';
+
+  const failCard = document.getElementById('failureAlertCard');
+  if (failCard) failCard.classList.add('hidden');
 
   const pipelineStages = [
     'Validating LinkedIn Profile Format',
@@ -187,11 +226,29 @@ async function triggerResearch() {
     const result = await response.json();
 
     if (!result.success) {
-      statusBadge.textContent = 'RESEARCH FAILED';
+      statusBadge.textContent = 'SAFE FAILURE ENFORCED // RESEARCH HALTED';
       statusBadge.className = 'badge badge-danger';
-      alert(`Research Failed [${result.error_code}]: ${result.message}`);
+      
+      const facBadge = document.getElementById('facBadge');
+      const facTitle = document.getElementById('facTitle');
+      const facDesc = document.getElementById('facDesc');
+
+      if (failCard) {
+        failCard.classList.remove('hidden');
+        if (facBadge) facBadge.textContent = `SAFE FAILURE ENFORCED // ${result.error_code || 'INSUFFICIENT_EVIDENCE'}`;
+        if (facTitle) {
+          facTitle.textContent = result.error_code === 'INVALID_LINKEDIN_URL' 
+            ? 'Invalid LinkedIn URL Format' 
+            : 'Subject Not Verified from Authoritative Public Records';
+        }
+        if (facDesc) {
+          facDesc.textContent = result.message || 'The subject identity or corporate affiliation could not be verified from public records.';
+        }
+      }
       return;
     }
+
+    if (failCard) failCard.classList.add('hidden');
 
     currentRecord = result.data;
     statusBadge.textContent = 'COMPLETED // AWAITING HUMAN REVIEW';
