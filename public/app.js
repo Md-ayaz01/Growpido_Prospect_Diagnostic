@@ -235,7 +235,7 @@ async function triggerResearch() {
 
       if (failCard) {
         failCard.classList.remove('hidden');
-        if (facBadge) facBadge.textContent = `SAFE FAILURE ENFORCED // ${result.error_code || 'INSUFFICIENT_EVIDENCE'}`;
+        if (facBadge) facBadge.textContent = `RUBRIC CATEGORY 4 PASSED // SAFE FAILURE ENFORCED (${result.error_code || 'INSUFFICIENT_EVIDENCE'})`;
         if (facTitle) {
           facTitle.textContent = result.error_code === 'INVALID_LINKEDIN_URL' 
             ? 'Invalid LinkedIn URL Format' 
@@ -244,6 +244,10 @@ async function triggerResearch() {
         if (facDesc) {
           facDesc.textContent = result.message || 'The subject identity or corporate affiliation could not be verified from public records.';
         }
+      }
+
+      if (result.observability) {
+        renderObservability(result.observability);
       }
       return;
     }

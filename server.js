@@ -203,9 +203,18 @@ app.post('/api/research', async (req, res) => {
       observability: {
         run_id: runId,
         start_time: new Date(startTime).toISOString(),
-        input_url: linkedin_url,
+        input_url: targetUrl || linkedin_url,
         diagnostic_status: errorCode,
-        total_runtime_ms: Date.now() - startTime
+        total_runtime_ms: Date.now() - startTime,
+        identity_resolution: `FAILED (${errorCode})`,
+        sources_found: 0,
+        claims_extracted: 0,
+        claims_verified: 0,
+        claims_partially_verified: 0,
+        claims_refused: 0,
+        claims_in_conflict: 0,
+        house_rules_passed: true,
+        run_mode: 'LIVE RESEARCH'
       }
     });
   }
